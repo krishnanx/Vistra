@@ -1,0 +1,14 @@
+##########################################
+## YARA SCAN REPORT
+##########################################
+Scan Time:     2026-01-02 16:46:23
+File Scanned:  Files/system_backup_v2.bin
+File Size:     236 bytes
+------------------------------------------
+Decision:      [!!] SUSPICIOUS FILE → QUARANTINE
+Total Severity:85
+Action Taken:  Moved to Quarantine
+
+MATCHED RULES:
+  - Rule: Linux_Ransomware_Encrypt_Delete_Workflow | Severity: 85
+##########################################

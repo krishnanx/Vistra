@@ -1,0 +1,13 @@
+##########################################
+## YARA SCAN REPORT
+##########################################
+Scan Time:     2026-01-02 16:46:23
+File Scanned:  Files/hello_world.c
+File Size:     80 bytes
+------------------------------------------
+Decision:      [OK] CLEAN FILE
+Total Severity:0
+Action Taken:  Ignored (Clean)
+
+No rules matched.
+##########################################

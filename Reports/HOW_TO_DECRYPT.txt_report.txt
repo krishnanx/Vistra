@@ -1,0 +1,16 @@
+##########################################
+## YARA SCAN REPORT
+##########################################
+Scan Time:     2026-01-02 16:46:23
+File Scanned:  Files/HOW_TO_DECRYPT.txt
+File Size:     532 bytes
+------------------------------------------
+Decision:      [!!!] CONFIRMED RANSOMWARE → DELETE
+Total Severity:255
+Action Taken:  Moved to Deleted (Simulated Delete)
+
+MATCHED RULES:
+  - Rule: Linux_Ransomware_Hardcoded_Wallet | Severity: 70
+  - Rule: Linux_Ransomware_RansomNote_Generic | Severity: 95
+  - Rule: Linux_Ransomware_TOR_Payment_Fixed | Severity: 90
+##########################################
