@@ -7,22 +7,23 @@
 #include <cstring>
 #include <string>
 #include <ctime>        // For timestamp in report
+using namespace std;
+namespace fs = filesystem;
 
-namespace fs = std::filesystem;
 
 // Explicitly define the constant if <yara/compiler.h> doesn't expose it correctly
 #ifndef YR_COMPILER_ERROR
 #define YR_COMPILER_ERROR 2 
 #endif 
-
+#define deleteThreshold 150
+#define quarantineThreshold 70
 /* Global scan state (reset per file) */
 int total_severity = 0;
-std::string suggested_action = "ignore";
-std::map<std::string, int> matched_rules;
-std::string final_decision_text = "[OK] CLEAN FILE"; // New global for reporting
+string suggested_action = "ignore";
+map<string, int> matched_rules;
+string final_decision_text = "[OK] CLEAN FILE"; // New global for reporting
 
-/* ---------------- YARA CALLBACK (Unchanged) ---------------- */
-// ... (yara_callback remains the same)
+/* ---------------- YARA CALLBACK ---------------- */
 int yara_callback(
     YR_SCAN_CONTEXT* context,
     int message,
@@ -33,7 +34,7 @@ int yara_callback(
         YR_RULE* rule = (YR_RULE*)message_data;
 
         int severity = 0;
-        std::string action = "ignore";
+        string action = "ignore";
 
         YR_META* meta;
         yr_rule_metas_foreach(rule, meta) {
@@ -54,11 +55,11 @@ int yara_callback(
             suggested_action = action;
         }
 
-        std::cout << "  [+] Matched rule: "
+        cout << "  [+] Matched rule: "
                   << rule->identifier
                   << " | severity=" << severity
                   << " | action=" << action
-                  << std::endl;
+                  << endl;
     }
     return CALLBACK_CONTINUE;
 }
@@ -66,15 +67,15 @@ int yara_callback(
 /* ---------------- QUARANTINE / DELETED MOVE ---------------- */
 
 // New function for moving files to a specific destination folder
-void move_file_to_folder(const fs::path& file, const std::string& folder_name) {
+void move_file_to_folder(const fs::path& file, const string& folder_name) {
     fs::create_directory(folder_name);
     fs::path dest = fs::path(folder_name) / file.filename();
 
     try {
         fs::rename(file, dest);
-        std::cout << "  [→] Moved to " << folder_name << "\n";
+        cout << "  [→] Moved to " << folder_name << "\n";
     } catch (...) {
-        std::cerr << "  [!] Failed to move file to " << folder_name << "\n";
+        cerr << "  [!] Failed to move file to " << folder_name << "\n";
     }
 }
 
@@ -93,8 +94,8 @@ void delete_file_simulated(const fs::path& file) {
 
 void write_report(const fs::path& file) {
     fs::create_directory("Reports");
-    std::string report_filename = "Reports/" + file.filename().string() + "_report.txt";
-    std::ofstream report_file(report_filename);
+    string report_filename = "Reports/" + file.filename().string() + "_report.txt";
+    ofstream report_file(report_filename);
 
     // Get current time
     time_t rawtime;
@@ -103,7 +104,7 @@ void write_report(const fs::path& file) {
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-    std::string timestamp(buffer);
+    string timestamp(buffer);
 
 
     report_file << "##########################################\n";
@@ -117,9 +118,9 @@ void write_report(const fs::path& file) {
     report_file << "Total Severity:" << total_severity << "\n";
     report_file << "Action Taken:  ";
 
-    if (total_severity >= 150) {
+    if (total_severity >= deleteThreshold) {
         report_file << "Moved to Deleted (Simulated Delete)\n";
-    } else if (total_severity >= 70 || suggested_action == "quarantine") {
+    } else if (total_severity >= quarantineThreshold || suggested_action == "quarantine") {
         report_file << "Moved to Quarantine\n";
     } else {
         report_file << "Ignored (Clean)\n";
@@ -136,7 +137,7 @@ void write_report(const fs::path& file) {
     }
     report_file << "##########################################\n";
 
-    std::cout << "  [✓] Report saved to " << report_filename << "\n";
+    cout << "  [✓] Report saved to " << report_filename << "\n";
 }
 
 
@@ -144,8 +145,8 @@ void write_report(const fs::path& file) {
 // ... (Compiler callback struct and function are moved here)
 
 struct CompilerErrorInfo {
-    std::string message;
-    std::string rule_file;
+    string message;
+    string rule_file;
     int line = 0;
     bool had_error = false;
 };
@@ -172,19 +173,17 @@ void compiler_callback(
 
 /* ---------------- MAIN ---------------- */
 
-/* ---------------- MAIN (FINAL CORRECTED LOGIC) ---------------- */
-
 int main() {
-    const std::string SCAN_DIR = "Files";
-    const std::string RULE_DIR = "Yara";
+    const string SCAN_DIR = "Files";
+    const string RULE_DIR = "Yara";
 
     if (!fs::exists(SCAN_DIR)) {
-        std::cerr << "[!] Files directory not found\n";
+        cerr << "[!] Files directory not found\n";
         return 1;
     }
 
     if (!fs::exists(RULE_DIR)) {
-        std::cerr << "[!] Yara rule directory not found\n";
+        cerr << "[!] Yara rule directory not found\n";
         return 1;
     }
 
@@ -215,17 +214,17 @@ int main() {
         fclose(fp);
 
         if (res != ERROR_SUCCESS || g_compiler_error.had_error) {
-            std::cerr << "\n[!!!] FAILED TO COMPILE RULE\n";
-            std::cerr << "[!] File: " << rule.path() << " | Error Code: " << res << std::endl;
+            cerr << "\n[!!!] FAILED TO COMPILE RULE\n";
+            cerr << "[!] File: " << rule.path() << " | Error Code: " << res << endl;
             
             if (g_compiler_error.had_error) { 
-                std::cerr << "    Compilation Error: "
+                cerr << "    Compilation Error: "
                           << g_compiler_error.message
                           << " on line " << g_compiler_error.line
                           << " (In file: " << g_compiler_error.rule_file << ")"
-                          << std::endl;
+                          << endl;
             } else {
-                 std::cerr << "    Note: Rule failed compilation, but no specific error message was captured. Rule may contain invalid characters.\n";
+                 cerr << "    Note: Rule failed compilation, but no specific error message was captured. Rule may contain invalid characters.\n";
             }
             
             yr_compiler_destroy(compiler);
@@ -238,7 +237,7 @@ int main() {
     YR_RULES* rules = nullptr;
     if (yr_compiler_get_rules(compiler, &rules) != ERROR_SUCCESS || !rules) {
         if (!g_compiler_error.had_error) {
-             std::cerr << "[!] Could not finalize rules. Check rule files.\n";
+             cerr << "[!] Could not finalize rules. Check rule files.\n";
         }
        
         yr_compiler_destroy(compiler);
@@ -259,7 +258,7 @@ int main() {
         matched_rules.clear();
         final_decision_text = "[OK] CLEAN FILE"; 
 
-        std::cout << "\n[*] Scanning: " << file.path() << std::endl;
+        cout << "\n[*] Scanning: " << file.path() << endl;
 
         // Perform the scan (This was missing from the code you showed in the last turn)
         yr_rules_scan_file(
@@ -274,10 +273,10 @@ int main() {
         // 2. Determine the decision and set final text
         bool needs_action = true;
         
-        if (total_severity >= 150) {
+        if (total_severity >= deleteThreshold) {
             final_decision_text = "[!!!] CONFIRMED RANSOMWARE → DELETE";
         }
-        else if (total_severity >= 70 || suggested_action == "quarantine") {
+        else if (total_severity >= quarantineThreshold || suggested_action == "quarantine") {
             final_decision_text = "[!!] SUSPICIOUS FILE → QUARANTINE";
         }
         else {
@@ -285,11 +284,11 @@ int main() {
         }
 
         // 3. Print summary to console
-        std::cout << final_decision_text << "\n";
+        cout << final_decision_text << "\n";
         if (!matched_rules.empty()) {
-            std::cout << "     Matched rules:\n";
+            cout << "     Matched rules:\n";
             for (const auto& r : matched_rules) {
-                std::cout << "       - "
+                cout << "       - "
                           << r.first
                           << " (severity " << r.second << ")\n";
             }
@@ -299,13 +298,13 @@ int main() {
         write_report(file.path());
 
         // 5. Take the final action
-        if (total_severity >= 150) {
+        if (total_severity >= deleteThreshold) {
             delete_file_simulated(file.path()); // Move to Deleted folder
         }
         else if (needs_action) { // Only quarantine if action was recommended
             quarantine_file(file.path()); // Move to Quarantine folder
         }
-        // If clean, no move action is taken.
+      
     }
 
     yr_rules_destroy(rules);
