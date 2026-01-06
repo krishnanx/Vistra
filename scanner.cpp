@@ -227,17 +227,16 @@ int main() {
              fs::directory_options::skip_permission_denied)) {
 
 
-            // ----- ADD THIS DEBUG -----
-            try {
-                cout << "[>] Visiting: " << entry.path().parent_path() << endl;
-            } catch (...) {
-                cout << "[!] Error accessing path: " << entry.path() << endl;
-                continue;  // skip if we can't access it
-            }
-            // ----------------------------
-
         if (!entry.is_regular_file()) continue;
         if (should_skip_path(entry.path())) continue;
+
+         // Print the exact file path being scanned
+        try {
+            cout << "[>] Accessing file: " << entry.path() << endl;
+        } catch (...) {
+            cout << "[!] Could not access file: " << entry.path() << endl;
+            continue;
+        }
 
         total_severity = 0;
         suggested_action = "ignore";
