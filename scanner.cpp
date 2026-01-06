@@ -42,10 +42,6 @@ bool should_skip_path(const fs::path& p) {
             return true;
         }
 
-        // Ignore vistra1 folder and all contents
-        if (p.string().find("/vistra1/") != string::npos || p.filename() == "vistra1")
-            return true;
-
     }
 
     return false;
