@@ -58,7 +58,8 @@ bool should_skip_path(const fs::path& p) {
 
         // if p == skip OR p is inside skip
         if (abs_p == abs_skip ||
-            abs_p.string().starts_with(abs_skip.string() + "/")) {
+            abs_p.string().compare(0,abs_skip.string().size() + 1,abs_skip.string() + "/") == 0
+        ) {
             return true;
         }
     }
