@@ -49,6 +49,23 @@ static const vector<fs::path> skip_paths = {
         "/home/kichu/vistra1"
     };
 
+
+/*----------- PATH SEVERITY MULTIPLIER ----------------*/
+int path_severity_multiplier(const fs::path& p) {
+    string s = p.string();
+
+    if ((s.rfind("home",0) == 0) || (s.rfind("tmp", 0) == 0))
+        return 1;      // full weight
+
+    if (s.rfind("var",0) == 0)
+        return 0.3;    // reduce confidence
+
+    if (s.rfind("usr",0) == 0)
+        return 0.1;    // very unlikely
+
+    return 1;
+}
+
 /* ---------------- PATH EXCLUSIONS ---------------- */
 bool should_skip_path(const fs::path& p) {
     
@@ -197,21 +214,6 @@ void write_report(const fs::path& file) {
     report.close();
 
     cout << "  [✓] Report saved: " << report_name << endl;
-}
-
-int path_severity_multiplier(const fs::path& p) {
-    string s = p.string();
-
-    if ((s.rfind("home",0) == 0) || (s.rfind("tmp", 0) == 0))
-        return 1;      // full weight
-
-    if (s.rfind("var",0) == 0)
-        return 0.3;    // reduce confidence
-
-    if (s.rfind("usr",0) == 0)
-        return 0.1;    // very unlikely
-
-    return 1;
 }
 
 /* ---------------- LIVE SPINNER ---------------- */
