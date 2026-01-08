@@ -22,7 +22,7 @@ struct ScanContext {
 
 /* ---------------- CONFIG ---------------- */
 #define DELETE_THRESHOLD 150
-#define QUARANTINE_THRESHOLD 70
+#define QUARANTINE_THRESHOLD 85
 
 /* ---------------- GLOBAL SCAN STATE ---------------- */
 int total_severity = 0;
@@ -33,24 +33,44 @@ string final_decision_text = "[OK] CLEAN FILE";
 /* ---------------- PATH EXCLUSIONS ---------------- */
 bool should_skip_path(const fs::path& p) {
     static const vector<fs::path> skip_paths = {
-        "/proc", "/sys", "/dev", "/run", "/snap", "/tmp", "/home/kichu/vistra1"
+        "/proc",
+        "/sys",
+        "/dev",
+        "/run",
+        "/snap",
+        "/tmp",
+        "/usr",
+        "/boot",
+        "/var/log",
+        "/var/cache",
+        "/home/sreyav/vistra1"
     };
 
-    for (const auto& skip : skip_paths) {
-        // check if p is the skip folder or inside it
-        if (p == skip || p.string().find(skip.string() + "/") == 0) {
-            return true;
-        }
-
+    fs::path abs_p;
+    try {
+        abs_p = fs::weakly_canonical(p);
+    } catch (...) {
+        return false;
     }
 
+    for (const auto& skip : skip_paths) {
+        fs::path abs_skip = fs::weakly_canonical(skip);
+
+        // if p == skip OR p is inside skip
+        if (abs_p == abs_skip ||
+            abs_p.string().compare(0,abs_skip.string().size() + 1,abs_skip.string() + "/") == 0
+        ) {
+            return true;
+        }
+    }
     return false;
 }
 
 
+
 /* ---------------- LOGGING ---------------- */
 void log_detection_event(
-    const string& rule_name,
+    //const string& rule_name,
     const string& file_path,
     const string& action,
     int severity
@@ -64,7 +84,6 @@ void log_detection_event(
     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&now));
 
     log << buf << " | "
-        << rule_name << " | "
         << file_path << " | "
         << action << " | "
         << severity << "\n";
@@ -103,17 +122,12 @@ int yara_callback(
             suggested_action = action;
         }
 
-        log_detection_event(
-            rule->identifier,
-            scanCtx->file_path,
-            action,
-            severity
-        );
+        
 
-        cout << "  [+] Rule matched: "
-             << rule->identifier
-             << " | severity=" << severity
-             << " | action=" << action << endl;
+        // cout << "  [+] Rule matched: "
+        //      << rule->identifier
+        //      << " | severity=" << severity
+        //      << " | action=" << action << endl;
     }
     return CALLBACK_CONTINUE;
 }
@@ -222,13 +236,23 @@ int main() {
     yr_compiler_destroy(compiler);
 
     /* ----------- RECURSIVE SCAN ----------- */
-    for (const auto& entry : fs::recursive_directory_iterator(
+    for ( auto it = fs::recursive_directory_iterator(
              SCAN_DIR,
-             fs::directory_options::skip_permission_denied)) {
+             fs::directory_options::skip_permission_denied);
+             
+             it!= fs::recursive_directory_iterator(); ++it){
+                
+        const auto& entry = *it;
+
+        if(should_skip_path(entry.path())){
+            it.disable_recursion_pending();
+            continue;
+        }
+             
 
 
         if (!entry.is_regular_file()) continue;
-        if (should_skip_path(entry.path())) continue;
+       // if (should_skip_path(entry.path())) continue;
 
          // Print the exact file path being scanned
         try {
@@ -268,11 +292,23 @@ int main() {
         if (total_severity >= DELETE_THRESHOLD) {
             final_decision_text = "[!!!] CONFIRMED RANSOMWARE → DELETE";
             needs_action = true;
+            log_detection_event(
+            //rule->identifier,
+            scanCtx.file_path,
+            "Delete",
+            total_severity
+        );
         }
         else if (total_severity >= QUARANTINE_THRESHOLD ||
                  suggested_action == "quarantine") {
             final_decision_text = "[!!] SUSPICIOUS FILE → QUARANTINE";
             needs_action = true;
+            log_detection_event(
+            //rule->identifier,
+            scanCtx.file_path,
+            "Quarantine",
+            total_severity
+            );
         }
 
         cout << final_decision_text << endl;
