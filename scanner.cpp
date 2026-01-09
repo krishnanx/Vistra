@@ -24,7 +24,7 @@ struct ScanContext {
 
 /* ---------------- CONFIG ---------------- */
 #define DELETE_THRESHOLD 150
-#define QUARANTINE_THRESHOLD 85
+#define QUARANTINE_THRESHOLD 80
 
 /* ---------------- GLOBAL SCAN STATE ---------------- */
 double total_severity = 0;
@@ -45,6 +45,7 @@ static const vector<fs::path> skip_paths = {
         "/boot",
         "/var/log",
         "/var/cache",
+        "/var","/etc",
         "/home/sreyav/vistra1",
         "/home/kichu/vistra1"
     };
