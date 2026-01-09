@@ -2,7 +2,7 @@ rule Python_Ransomware_Simulator
 {
     meta:
         description = "Python ransomware-like behavior simulator"
-        severity = 70
+        severity = 80
         action = "quarantine"
 
     strings:
