@@ -45,7 +45,6 @@ static const vector<fs::path> skip_paths = {
         "/boot",
         "/var/log",
         "/var/cache",
-        "/var","/etc",
         "/home/sreyav/vistra1",
         "/home/kichu/vistra1"
     };
