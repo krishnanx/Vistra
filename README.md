@@ -259,8 +259,8 @@ This approach enables detection of both **known ransomware families** and **prev
 
 # Contributors
 
-- @krishnanx
-- @Sreyavenkat
+- [Krishnan E](https://github.com/krishnanx)
+- [Sreyavenkat](https://github.com/Sreyavenkat)
 
 ---
 
